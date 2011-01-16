@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Bowler - RESTful Scala Web Framework</title>
+<link rel="stylesheet" type="text/css" href="css/style.css"/>
+</head>
+<body>
+<div id="container">
+<span ><!-- header panel here --></span>
+<div id="header">
+
+<h1 >Bowler Framework</h1>
+<p >RESTful Scala Web Framework</p>
+</div>
+
+<div>
+ <!--	<ul class="tabs-nav">
+	        <li ><a href="/" ><span class="tab-selected">Home</span></a></li><li ><a href="/"><span>Bowler Manual</span></a></li>
+	    </ul> -->
+
+    </div>
+<div class="tabs-container">
+<div id="body">
+<h3>Bowler - A Scala Web Framework with a functional flavor that is RESTful & Multi-Channel ready </h3>
+<p>Bowler is a RESTful, multi-channel ready web framework in Scala with a functional flavour, built on top of <a href="http://www.scalatra.org/">Scalatra</a> and <a href="http://scalate.fusesource.org/">Scalate</a>, with <a href="https://github.com/lift/lift/tree/master/framework/lift-base/lift-json/">Lift-JSON</a> doing the heavy JSON lifting.
+The project is built with <a href="http://code.google.com/p/simple-build-tool/">Simple Build Tool ("sbt")</a>- we intend to further add custom sbt processors in the future to automate boilerplate tasks.</p>
+<p>
+	asd
+</p>
+
+<h4>Index of All Things Bowler</h4>
+<ul>
+	<li><a href="#features">Features</a></li>
+	<li><a href="#sbt">Getting Started using Simple Build Tool</a></li>
+	<li><a href="#maven">Getting Started using Maven</a></li>
+	<li><a href="#code">Getting the Code</a></li>
+	<li><a href="#samples">Your First Bowler App (Some Example Code)</a></li>
+	<li><a href="#involved">Getting Involved & Getting Help</a></li>
+	<li><a href="#docs">Documentation/Manual</a></li>
+	<li><a href="#future">Future & TODO's</a></li>
+	<li><a href="http://bowler.s3.amazonaws.com/api">API Docs</a></li>
+	</ul>
+
+
+<h4><a name="features">Some of Bowlers features</a></h4>
+<ul>
+	<li><B>RESTful URL routing</b> based on <a href="https://github.com/scalatra/scalatra">Scalatra</a>, supporting named parameters, wild card URL's or regex URL's (see more at the Scalatra URL)</li>
+	<li><b>Uses <a href="http://scalate.fusesource.org/">Scalate</a> for templating</b>: use any templating dialect supported by Scalate, such as Mustache, SSP, Jade or Scaml.</li>
+	<li><b>JSON API "for free"</b>: JSON is central in todays web landscape, be it to create rich webapps with Javascript frameworks like JQuery, or providing API's for mobile apps. Every GET URL in Bowler will return a JSON representation of the underlying view model if you set the HTTP "Accept" header to "application/json"</li>
+	<li><b>HTTP Request to object mapping with ease</b>: Bowler comes with out-of-the-box support to easily map from requests to arbitrary objects and back while respecting RESTful principles.</li>
+	<li><b>Composable UI's with ease</b>: Bowler provides the means to easily compose- and re-use UI components with a minimum of overhead.</li>
+	<li><b>Decomposition of the View into "Resource View" &amp; Layout</b> - A consequence and enabler of the above two points, a stricter separation between the Resource View representing the Model you want to display and the Layout you want to surround it with. The idea behind this is explained here: <a href="http://blog.recursivity.com/post/2615673341/decomposing-the-view-in-mvc-whats-in-a-view">Decomposing the View in MVC - What's In a View?</a></li>
+	<li><b>Localisation & multi-channel support out of the box</b>: localisation of everything from UI to validation error messages is supported out of the box, as is adapting the view and layout based on request characteristics, such as User-Agent (you may want to render a web page differently for an iPhone compared to a desktop browser).</li>
+	<li><b>Sensible defaults, but ultimate configurability</b>: Bowler has sensible defaults out of the box that you may never change. But it also allows you to extend- hook-in and adapt the framework at any point you choose: Don't like the validation framework? Use another one! Prefer a different rendering mechanism to Scalate? Change it!</li>
+</ul>
+
+<h4><a name="sbt">Getting Started Using Simple Build Tool</a></h4>
+The below <a href="http://code.google.com/p/simple-build-tool/">Simple Build Tool (sbt)</a> project file should give you all you need to start using Bowler if you're a Sbt user (place the file in your project/build folder). It should download all the dependencies required from Sonatypes public repo once you run the sbt "update" command.
+<script src="https://gist.github.com/782223.js"> </script>
+
+<h4><a name="maven">Getting Started Using Maven</a></h4>
+If you're using Maven, you need to add the following into your pom.xml (in addition to the other Scala stuff you may want to set up for compilation):
+<script src="https://gist.github.com/782228.js?file=gistfile1.txt"></script>
+
+<h4><a name="code">Getting the Code</a></h4>
+You can get the full Bowler source code from <a href="http://github.com/wfaler/Bowler">the Bowler GitHub repo</a>.
+
+<h4><a name="samples">Your First Bowler App (Some Example Code)</a></h4>
+The easiest way to get a quick introduction to Bowler is probably to check out the <a href="https://github.com/wfaler/Bowler/tree/master/examples">Example application in the Bowler GitHub repo</a>. 
+This comes fully functioning out of the box with a number of examples of of Bowlers main features, and also comes with relatively well documented and commented code.<br/>
+You may also want to start browsing <a href="https://github.com/wfaler/Bowler/wiki">the Bowler Wiki</a>.
+However, to give a taster (from the example app) of what the core logic and a Controller in a Bowler app might look like, here's an example:
+<script src="https://gist.github.com/782258.js?file=WidgetController.scala"></script>
+
+<h4><a name="involved">Getting Involved & Getting Help</a></h4>
+Bowler has a <a href="https://groups.google.com/group/bowler-users">Google Groups mailing list</a> where you can ask questions, give ideas, feedback and contributions.
+<h4><a name="docs">Documentation/Manual</a></h4>
+ <a href="https://github.com/wfaler/Bowler/wiki">the Bowler Wiki</a> is the place for all things documentation!
+</div>
+<h4><a name="future">Future & TODO's</a></h4>
+ <a href="https://github.com/wfaler/Bowler/wiki">the Bowler Wiki</a> is the place for all things documentation!
+</div>
+
+
+</div>
+
+        <div id="footer">
+<p>
+<span wicket:id="copyrightNotice">Copyright &copy; Recursivity limited, 2010-
+</p>
+</div>
+
+
+</div>
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1376753-12']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>
