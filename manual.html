@@ -10,7 +10,7 @@
 <span ><!-- header panel here --></span>
 <div id="header">
 
-<h1 >Bowler Framework</h1>
+<h1 >Bowler</h1>
 <p >RESTful Scala Web Framework</p>
 </div>
 
@@ -21,12 +21,188 @@
 
     </div> -->
 <div class="tabs-container">
-
+<div id="body">
 <h2>The Bowler Manual</h2>
+This is the Bowler manual and will continually be expanded on. In addition to this manual, the <a href="https://github.com/wfaler/Bowler/tree/master/examples">Bowler Example Application</a> and the <a href="https://github.com/wfaler/bowler-quickstart">Bowler Quickstart</a> are good places to start getting into Bowler and how it works.
+<ul>
+	<li><a href="#setup">Application Setup</a></li>
+	<li><a href="#structure">Application Structure</a></li>
+	<li><a href="#routes">The Controller - Defining Routes/URL's</a></li>
+
+	<li><a href="#view">The View</a></li>
+	<ul>
+		<li><a href="#resourceview">The Resource View</a></li>
+		<li><a href="#scalatmodelalias">Scalate Templates & View Model Aliases</a></li>
+		<li><a href="#templatemapping">Template Mapping</a></li>
+		<ul>
+			<li><a href="#localisation">Localisation</a></li>
+		</ul>		
+		<li><a href="#jsonhtml">Return JSON or HTML?</a></li>
+		<li><a href="#layouts">Layouts</a></li>
+		<ul>
+			<li><a href="#layoutbasics">Basics</a></li>
+			<li><a href="#layoutmodels">Layout Models</a></li>
+			<li><a href="#nestedlayouts">Nested Layouts</a></li>
+			<li><a href="#layoutcomposition">Layout Composition: Layout Models</a></li>
+		</ul>
+	</ul>
+	<li><a href="#model">The Model: POST, PUT, GET, DELETE - Handling Requests</a></li>
+	<ul>
+		<li>Parameter Mapping: Mapping Requests to Beans/instances</li>
+		<ul>
+			<li>Optional Parameters</li>
+			<li>Lookup Complex Objects by Id: StringValueTransformers</li>
+			<li>PUT & POST vs. GET & DELETE</li>
+		</ul>
+		<li>Forms</li>
+		<li>Validation</li>
+		<ul>
+			<li>Creating Custom Validators</li>
+			<li>Validation Messages & Localisation</li>
+		</ul>
+	</ul>
+	<li>Testing</li>
+	<li>Multi-Channel Support</li>
+	<ul>
+		<li>Layout Selectors & Client/Request Specific Layouts</li>
+		<li>View Suffixes for Client/Request Specific Views</li> 
+	</ul>
+	<li>Customizing the Framework</li>
+	<ul>
+		<li>Request Mapping Strategies</li>
+		<li>Render Strategies & View Renderers</li>
+	</ul>
+</ul>
+<h3><a name="setup">Application Setup</a></h3>
+Below is an example of the web.xml for a typical Bowler application:
+<script src="https://gist.github.com/783537.js?file=web.xml"></script>
+The only thing of note here is the BowlerFilter (you could also use BowlerServlet), which takes an init-parameter called "bootstrapClass". The bootstrapClass is simply the starting point of your application, where as the name implies, you bootstrap your whole application.<br/>
+Below is an example of a minimal Bowler bootstrap class:
+<script src="https://gist.github.com/783541.js?file=Bootstrap.scala"></script>
+The Bootstrap class above is a simple basic class with a no-args constructor, which does the following from top to bottom:
+<ul>
+	<li>Sets up a default view Layout for the application</li>
+	<li>Adds a LayoutSelector for the Layout, in this case a catch-all DefaultLayoutSelector which will use the layout for all requests (more about Layout selection later)</li>
+	<li>Starts a Controller that responds to Requests</li>
+	<li>Sets the Scalate RenderEngine to disallow caching and allow reloading - this will slow down rendering, but is useful if you want to change Scalates on the fly during runtime during development</li>
+</ul>
+That's it, there's really not much more to setting up a basic Bowler Applications! Of course, you could add much more here: more Controllers, add StringValueTransformers to the TransformerRegistry for looking up complex objects based on request parameters such as id's, add more complex Layouts etc.
+
+<h3><a name="structure">Application Structure</a></h3>
+A typical Bowler Application, as seen from a Maven or SBT default project structure will have a structure as follows:
+<ul>
+	<li>src/main/</li>
+	<ul>
+		<li>webapp/WEB-INF/web.xml</li>
+		<li>scala/[yourpackage] <i>(your application sources)</i></li>
+		<li>scala/[your validator package] <i>(package with your validator classes)</i></li>
+		<li>resources/layouts/ <i>(location for your application layouts)</i></li>
+		<ul>
+			<li>default.mustache <i>(illustration of possible default layout location)</i></li>
+		</ul>
+		<li>resources/view/ <i>(location for your views)</i></li>
+		<ul>
+			<li>GET/ <i>(views are held in locations based HTTP Method and path, for instance "GET /" could be in "/views/GET/index.mustache")</i></li>
+			<ul>
+				<li>index.mustache <i>(illustration of possible template name. Can be .mustache, .ssp, .jade or .scaml)</i></li>
+			</ul>
+		</ul>
+		<li>resources/[your validator package] <i>(package with your validator .properties message files)</i></li>
+	</ul>	
+</ul>
+	What is noteworthy above is that views and layouts are kept on the classpath, layouts on the /layouts/ path, and views in the /views/ package, followed by the HTTP Method and path, for instance /views/GET/somepath.ssp.
+	
+	<h3><a name="routes">The Controller - Defining Routes/URL's</a></h3>
+You define "routes" in Bowler based on the approach <a href="https://github.com/scalatra/scalatra">inherited from Scalatra</a>, which Bowler is built on top of. You typically do this by inheriting the <i>Controller</i> trait and adding your Controller in the bootstrap-class of your application.<br/>
+Below is an example of a simple Controller, please note the comments:
+<script src="https://gist.github.com/783603.js?file=MyController.scala"></script>
+In the example above, you can see that each HTTP Method has it's own equivalent verb in the Bowler DSL which allows you to create an application route that takes a Request and Response as arguments.<br/>
+We can also do wild-card URL's as follows:
+<script src="https://gist.github.com/783606.js?file=wildcard.scala"></script>
+..this will make the wildcards available in a special case request variable called "splat" in the form of a List in the order of the wildcards.<br/>
+But that's not all, we can also have regular expression routes:
+<script src="https://gist.github.com/783608.js?file=regexroute.scala"></script>
+In a similar manner to the wildcards, the regex values captures will be available in a special case request variable called "captures" in the form of a List in the order of the wildcards.<br/>
+It should be noted that regex and wildcard URL's view mappings need to be explicitly made, as the file system of some operating systems, notably Windows do not support some of the strange characters that may otherwise ensue. More about this in the section <a href="#templatemapping">Template Mapping</a>.
 
 
 
+<h3><a name="view">The View</a></h3>
 
+<h4><a name="resourceview">The Resource View - Separating View Model from Layout</a></h4>
+The default Bowler setup makes a distinction between the <b>Resource View</b> and the <b>Layout</b>. The rationale behind this is simple: in a truly RESTful application, by getting a resource at a URL you are primarily interested in the details of the resource (most commonly a model object or several models in our case), not the "decoration" around it - navbars, headers, footers and other things you may get with a desktop browser are there for usability, but often have very little to do with the resource itself. This is why we make this distinction, more about the rationale behind can be found in <a href="http://blog.recursivity.com/post/2615673341/decomposing-the-view-in-mvc-whats-in-a-view">this blog post</a>.<br/>
+Given this background, a rendered View in Bowler will usually consist of a Resource View and a Layout that wraps around the Resource View.<br/><br/>
+Consider the following case class and controller:
+<script src="https://gist.github.com/783654.js?file=widgetcontroller.scala"></script>
+Now, consider the above controller with the following view at the classpath location of <i>/views/GET/showAWidget/index.mustache</i>
+<script src="https://gist.github.com/783657.js?file=widget.html"></script>
+This should render the following (excluding any layout around it for simplicity of the example):
+<script src="https://gist.github.com/783660.js?file=widgetresult.html"></script>
+
+There are a couple of things to learn from this: by extending our controller with <i>Renderable</i>, we get access to the <i>render</i> function, which is a vararg function that will invoke the rendering with your model objects. Render will eventually map your model into an appropriate model for Scalate and the mustache template to render in this case. We'll deal with this in a second.<br/>
+The <i>render</i> function is central here: as you can see, you only pass in your model, or any arbitrary model objects that represent your resource, but you don't actually give it any information on how to render the model. This is important, especially if you want to render to multiple outputs, for instance JSON (which you get for free, more on that later) and HTML.
+	
+<h4><a name="scalatmodelalias">Scalate Templates & View Model Aliases</a></h4>
+As we could see in the above example, the Widget case class instance somehow got mapped into a Scalate model object called <i>"widget"</i> for the benefit of the template, how did this happen and what governs this?
+It's really quite simple, there are a couple of simple rules around this:
+<ul>
+	<li>By default, a class passed as View Model will be called it's lower case equivalent, for instance <i>com.mypackage.Widget</i> will become <i>widget</i> in the template.</li>
+<li>Sets, Seqs, Lists and java.util.Collection's will be called the plural form of the objects contained, for instance a <i>List[Widget]</i> would become <i>widgets</i>. In this sense, the pluralisation is a bit dumb and only appends an "s" to the type alias</li>
+<li>You can override this behavior by wrapping whatever View Model you pass in in a <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/ViewModel.html">ViewModel</a> object giving it the new alias as a constructor argument.</li>
+<li>Finally, you can override the default alias by registering another one in the <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/model/AliasRegistry$.html">AliasRegistry</a></li>
+</ul>
+Given these basics, other template specific questions are probably best answered by the <a href="http://scalate.fusesource.org/">Scalate</a> documentation, and depending on your preference of Scalate supported templating language, more specifically the <a href="http://scalate.fusesource.org/documentation/mustache.html">Mustache</a>, <a href="http://scalate.fusesource.org/documentation/ssp-reference.html">SSP</a>, <a href="http://scalate.fusesource.org/documentation/jade.html">Jade</a> or <a href="http://scalate.fusesource.org/documentation/scaml-reference.html">Scaml</a> docs.<br/>
+Personally, I have a preference for Mustache templates in most cases, as they are logic-less and avoid any temptation to include backend application logic in the template and all the potential stupid things that can come with that.
+
+<h4><a name="templatemapping">Template Mapping & Paths</a></h4>
+As we have mentioned, we support all Scalate template types out of the box. The resolution of whether it is a .mustache, .jade, .ssp or .scaml template is done "auto-magically", so you may happily mix various types if you need/want to.<br/>
+As we also mentioned, views are typically in a path according to the following format (assuming you use the default locations): <i>/views/[HTTPMETHOD]/[firstpartofpath]/[secondpart].[mustache|ssp|jade|scaml]</i>
+There are some notable special cases around this (we'll use .mustache files here for simplicity, though you could use any scalate supported type):
+<ul>
+	<li>The root of a folder/path should have an <i>index.mustache</i> file.</li>
+	<li>For named variables, like ":id", the semi-colon is replaced by an underscore, so request to GET <i>"/widgets/:id"</i> would be mapped to for instance a mustache template at <i>/views/GET/widgets/_id.mustache</i>. This also goes for multiple levels of nested named parameters: folders can also be prefixed with the underscore</li>
+	<li>Regex and Wildcard URL's need to have their view templates set explicitly by calling <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/scalate/TemplateRegistry$.html">TemplateRegistry.overridePath</a> or TemplateRegistry.regexPath, for instance <i>TemplateRegistry.overridePath("/say/*/to/*", "/views/GET/hello")</i> (note the omitted file-ending, Bowler will work this out for you)</li>
+	<li>Any other route can also have their related view overriden as above, this can be useful if you want to re-use the same view across several routes.</li>
+</ul>
+<h5><a name="localisation">Localisation</a></h5>	
+Localisation of Views and Layouts in Bowler is easy - simply copy your original template and suffix the filename before the file-ending with the locale:
+For instance, a file called <i>index_se.mustache</i> will take precedence over <i>index.mustache</i> if the users browser has a Swedish locale set.
+<h4><a name="jsonhtml">Return JSON or HTML?</a></h4>	
+Given the separation of Resource View and Layout that we have been banging on about, rendering JSON instead of HTML is really simple: if you set the HTTP "accept" header on a request to "application/json" the server will render a JSON representation of your View Model.
+Consider the following JQuery code:
+<script src="https://gist.github.com/783704.js?file=json.js"></script>
+That's really all you need to emit JSON back to the client! Imagine how simple it becomes to create rich, interactive, JavaScript heavy webapps when you don't have to duplicate work to return JSON instead of HTML! 
+For instance, if you did a GET request to a route that rendered the Widget we used previously, it might emit something like this:
+<script src="https://gist.github.com/783710.js?file=widget.json"></script>	
+
+<h4><a name="layouts">Layouts</a></h4>	
+<h5><a name="layoutbasics">Basics</a></h5>	
+If we consider the simplest case which we showed in the <a href="#setup">Application Setup</a> section, setting up a layout is as simple as it is shown in the Application Setup section. If you create a default layout with name "default", using mustache, it will be in the classpath location of <i>/layouts/default.mustache</i>. So we may have the following layout:
+<script src="https://gist.github.com/783719.js?file=defaultlayout.html"></script>
+The {{&doLayout}} is the place where your Resource View will go when rendered. Also "doLayout" is the default name given to the place for the Resource View, <b>unless</b> you specify a custom <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/scalate/LayoutModel.html">LayoutModel</a>, in which case it becomes the LayoutModel implementors responsibility to add the resource view to the template.
+
+<h5><a name="layoutmodels">Layout Models</a></h5>
+A Layout may not just be as simple as some static HTML, you may want to define your own <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/scalate/LayoutModel.html">LayoutModels</a> that look up some data that you want for your layout, for instance related articles if your resource view is displaying an article of some sort.<br/>
+To do this, simply implement the LayoutModel trait, which takes the Request, View Model as a Map (in case you want to introspect this) and the rendered Resource View as a String (so you can place it in the Layout). From this, you should produce a Map that holds all the values that you want to use as models for the Layout Scalate Template.<br/>
+LayoutModels are slightly closer to Scalate in terms of how the Model is given, but this is because we no longer have to strictly adhere to the Resource View/Layout split, as we are only dealing with the Layout concern.
+
+<h5><a name="nestedlayouts">Nested Layouts</a></h5>	
+You can also have levels of Layouts nested, for instance, you might want to have an "articleLayout" with links to related articles to wrap around an article resource view, which in turn is wrapped by a "section" layout and finally by the generic layout.<br/>
+Consider the following code that should go into the application bootstrap class to see how you may wrap layers of layouts:
+<script src="https://gist.github.com/783727.js?file=parentlayout.scala"></script>
+As you can see, the composableLayout has a parent layout of "parentLayout".
+The Bowler framework will take care of any traversal upwards to render your whole hierarchy of layouts.<br/>
+Finally, if you want slightly different layouts for different routes, you can define these by chaining <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/scalate/selectors/LayoutSelector.html">LayoutSelectors</a> you add in the <i>TemplateRegistry.appendLayoutSelectors</i> in order of evaluation (the layout that is first returned rather than "None" is the one that will be used).
+
+<h5><a name="layoutcomposition">Layout Composition</a></h5>	
+What if I want to include more than the child Layout or Resource View in my Layout based on templates? Simple! You can do this in several ways with the help of LayoutModels as we have discussed, for instance you might take direct control of Scalate to add a "tabsPanel" to some Layout, just as in the code below:
+<script src="https://gist.github.com/783739.js?file=advancedlayoutmodel.scala"></script>
+
+
+<h3><a name="model">The Model: POST, PUT, GET, DELETE - Handling Requests</a></h3>
+
+
+</div>
 </div>
 
         <div id="footer">
