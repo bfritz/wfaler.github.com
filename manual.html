@@ -31,7 +31,7 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 
 	<li><a href="#view">The View</a></li>
 	<ul>
-		<li><a href="#resourceview">The Resource View</a></li>
+		<li><a href="#resourceview">The Resource View & View Model</a></li>
 		<li><a href="#scalatmodelalias">Scalate Templates & View Model Aliases</a></li>
 		<li><a href="#templatemapping">Template Mapping</a></li>
 		<ul>
@@ -48,20 +48,25 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 	</ul>
 	<li><a href="#model">The Model: POST, PUT, GET, DELETE - Handling Requests</a></li>
 	<ul>
-		<li>Parameter Mapping: Mapping Requests to Beans/instances</li>
+		<li><a href="#parametermapping">Parameter Mapping: Mapping Requests to Beans/instances</a></li>
 		<ul>
-			<li>Optional Parameters</li>
-			<li>Lookup Complex Objects by Id: StringValueTransformers</li>
-			<li>PUT & POST vs. GET & DELETE</li>
+			<li><a href="#formvjson">What about Form Encoded vs. JSON requests?</a></li>
+			<li><a href="#optionalparameters">Optional Parameters</a></li>
+			<li><a href="#valuetransformers">Lookup Complex Objects by Id: StringValueTransformers</a></li>
+			<li><a href="#putpostvsgetdelete">Creating & Editing instances: PUT & POST vs. GET & DELETE</a></li>
 		</ul>
-		<li>Forms</li>
-		<li>Validation</li>
+		<li><a href="#validation">Validation</a></li>
 		<ul>
-			<li>Creating Custom Validators</li>
-			<li>Validation Messages & Localisation</li>
+			<li><a href="#customvalidators">Creating Custom Validators</a></li>
+			<li><a href="#validationmessages">Validation Messages & Localisation</a></li>
 		</ul>
+		<li><a href="#forms">Forms</a></li>
+
 	</ul>
-	<li>Testing</li>
+	<li><a href="#testing">Testing</a></li>
+</ul>
+<h4>Deeper Customization</h4>
+<ul>
 	<li>Multi-Channel Support</li>
 	<ul>
 		<li>Layout Selectors & Client/Request Specific Layouts</li>
@@ -200,8 +205,102 @@ What if I want to include more than the child Layout or Resource View in my Layo
 
 
 <h3><a name="model">The Model: POST, PUT, GET, DELETE - Handling Requests</a></h3>
+<h4><a name="parametermapping">Parameter Mapping: Mapping Requests to Beans/instances</a></h4>
+How hard is it to map from a raw Request into an arbitrary bean or other object in Bowler? Not very:
+<script src="https://gist.github.com/783768.js?file=post.scala"></script>
+All you need to do is have your controller (or other class taking a request) extend the <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/model/ParameterMapper.html">ParameterMapper</a> trait, pass the generic type you want to transform into, and voila! You have your bean strongly typed.<br/>
+It's also worth noting that the <i>mapRequest</i>-function can take more than one generic type, thus mapping more beans/parameters from a single request. However, mapping more than one parameter from a single Request can involve potential conflicts, so there are two ways to resolve these:
+<ul>
+	<li>Provide the mapRequest function with a "nameHint" Stirng or List of "nameHints" Strings to hint to the mapRequest the names of the relevant parameters in the order they are defined. For obvious reasons this works best with simpler types that only require a single request parameter to be mapped.</li>
+	<li>Prefix the parameters/form-field names form the calling location with the alias-name of the type, for instance the "id" for a Widget may have a form input name of "widget.id". This is the recommended approach when dealing with multiple more complex objects that need several parameters to be properly mapped.</li>
+</ul>
+
+<h5><a name="formvjson">What about Form Encoded vs. JSON requests?</a></h5>	
+How does the ParameterMapper know whether to map from reqular HTTP Form parameters, or from the JSON contents if someone potentially POST:ed/PUT a JSON object in the request? By default, again, Bowler takes care of this: if the client has sent the HTTP Header <i>"Content-Type"</i> with a value of <i>"application/json"</i>, the ParameterMapper will check for the presence of a JSON object in the request on PUT and POST requests. If the header is not set, all will go on as usual, assuming parameters are mapped as if it was a form that was submitted or parameters passed in a URL.<br/>
+Incidentally, this actually helps dealing with some fragility that sometimes happens with JSON REST API's, where API users are confused whether to POST form data or POST a JSON object: Bowler simply doesn't care and will happily deal with both transparently.
+
+<h5><a name="optionalparameters">Optional Parameters</a></h5>	
+Passing null is a bad thing, as it can cause NullPointerExceptions further down, making errors harder to track down. To deal with this, Bowler simply prohibits the ParameterMapper from mapping requests to null when parameters cannot be properly mapped, and will throw an Exception at the point of mapping.
+To deal with this case, and in the case of parameters that may occur but are not mandatory, ie optional parameters, you should simply use the Scala Option-construct:
+<script src="https://gist.github.com/783786.js?file=OptionMapper.scala"></script>
+<h5><a name="valuetransformers">Lookup Complex Objects by Id: StringValueTransformers</a></h5>
+You might wonder how Bowler does the magic and looks up eventually pre-existing objects by id, maps to dates, decimals, integers, longs etc.<br/>
+There is a two step approach to this:<br/>
+<ul>
+	<li>You should implement a <i>StringValueTransformer</i> for <b>each</b> object type that you want to map to from Requests</li>
+	<li>You must register said StringValueTransformer with a <i>TransformerRegistry</i> in the bootstrap-class</li>
+</ul>
+Here's an example of a typical StringValueTransformer:
+<script src="https://gist.github.com/783798.js?file=WidgetTransformer.scala"></script>
+As you can see, the contract is simple: if an object can be mapped, return it wrapped in a Some(), if it cannot be mapped, or an error occurs that is related to mapping, return "None".<br/>
+To enable the transformer and register it with the app, add something similar to the following into your application bootstrap class:
+<script src="https://gist.github.com/783800.js?file=TransformerRegistry.scala"></script>
 
 
+<h5><a name="putpostvsgetdelete">Creating & Editing instances: PUT & POST vs. GET & DELETE</a></h5>
+It is important to distinguish between the behavior of PUT & POST vs. GET & DELETE with the ParameterMapper:<br/>
+PUT and POST requests can create new objects without a hit in a StringValueTransformer, as you'd expect, because a type persisted in a database has obviously cannot be looked up by id if it is just about to be created. <br/>
+PUT and POST allows creation of new objects even though a StringValueTransformer is unable to look it up. PUT and POST are also allowed to change the values of properties of a more complex object.<br/>
+GET and DELETE however are NOT allowed to create new objects nor mutate the properties of more complex objects. They are only allowed to be looked up based on registered transformers. The reason for this is simple: it is in accordance and in keeping with RESTful principles: only PUT and POST are allowed to change existing objects or create new ones. GET and DELETE are for retrieving a resource or deleting it. Of course you could circumvent this by explicitly changing values after mapping in your own code, but in most cases this would likely be a very bad idea.
+
+
+<h4><a name="validation">Validation</a></h4>
+For validation, we need to extend the Validations trait and use the validate(){} block as seen below:
+<script src="https://gist.github.com/783814.js?file=Validation.scala"></script>
+..now you can see we're starting to put everything together:
+<ul>
+	<li>We map a request into a Widget</li>
+	<li>Validate the Widget</li>
+	<li>Create the Widget, then render it</li>
+</ul>
+The validate-block used in the example below has a simple contract: return a <i>Option[List[Tuple2[String, String]]]</i>, whereby:
+<ul>
+	<li>None means there are no validation errors.</li>
+	<li>Some containing a non-empty List[Tuple2[String, String]] means there where validation errors</li>
+	<ul>
+		<li>The first String in the Tuple is the property key, like "id", "name" or the like</li>		
+		<li>The second String in the Tuple is the actual error message to be displayed back</li>	
+	</ul>
+</ul>
+The validation handling doesn't really care what validation framework you use as long as you follow the contract, you could write manual validation code if you wanted to, however, you probably don't want to, which is why Bowler has a sensible default validation framework:
+<h5><a name="customvalidations">Validators & Creating Custom Validators</a></h5>
+As <a href="https://github.com/wfaler/recursivity-commons">Recursivity Commons</a> (same author as Bowler) is a dependency of Bowler and contains a simple validation support, this can be used with Bowler with ease. Consider the following code:
+<script src="https://gist.github.com/783825.js?file=validator.scala"></script>
+The <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/model/DefaultModelValidator.html">DefaultModelValidator</a> is a convenience class for adding all the validations that belong together for a single validation context. You may add any number of <a href="https://github.com/wfaler/recursivity-commons/tree/master/src/main/scala/com/recursivity/commons/validator">Recursivity Validators</a> to a DefaultModelValidator, or extend the class.<br/>
+If you want to implement your own validators, it is as simple as implementing the com.recursivity.commons.validator.Validator interface:
+<script src="https://gist.github.com/783831.js?file=validator2.scala"></script>
+The custom validator above simply takes a function/closure that returns a Long as a constructor argument, then uses the function to get a Long, which is used to check if a Widget already exists or not.<br/>
+The getKey and getReplaceModel functions have to do with validation messages, which we will get to in a second (normally you'd probably want to set the key returned from the constructor rather than hard-code it).
+
+<h5><a name="validationmessages">Validation Messages & Localisation</a></h5>
+If you look at the previous WidgetValidator example above, you can see that the DefaultModelValidator takes a classOf "WidgetValidator" as an argument. What this tells the DefaultModelValidator is the context/location of the properties file where validation error messages can be resolved. For instance:<br/>
+If WidgetValidator is org.bowlerframework.examples.WidgetValidator we would need a properties file on the classpath at /org/bowlerframework/examples/WidgetValidator.properties that contains validation messages.<br/>
+A typical Validation error message properties file might look as follows for the WidgetValidator example:
+<script src="https://gist.github.com/783838.js?file=WidgetValidator.properties"></script>
+The rules for validator properties files are quite simple:
+<ul>
+	<li>A message for a validator will be keyed by the class-name of the validator, less package</li>
+	<li>The "key" in the validator is used to look up the property name, such as "yearMade" becoming "Year Made" in the final error message</li>
+	<li>The "replaceModel" defined in the validator is used to replace values such as the "{min}" and "{max}" for the number validators to give more information on the exact validation constraints</li>
+</ul>
+Finally a word on localisation: the validation message properties files support validation, if you create a file called WidgetValidator_se.properties, this will be the preferred source of messages for any client that has a locale set to Swedish.
+
+<h4><a name="forms">Forms</a></h4>
+When editing or creating new, it's recommended that you pass object you are editing, or wanting to create into the render function (as an empty object as below if necessary):
+<script src="https://gist.github.com/783846.js?file=newwidget.scala"></script>
+If you combine the above with the following template given the Widget case class Widget(id: Long, name: String, priceInPence: Int):
+<script src="https://gist.github.com/783844.js?file=new.mustache"></script>
+It's pretty straightforward, but we can note a few things:
+<ul>
+	<li><i>validationErrors</i>: This template block is used to render any validation errors that may occur after submission if validation fails. This would be empty to begin with.</li>
+	<li>We have given the form fields the "alias hint", by prefixing the input names with "widget", though not necessary in this case, it makes life easier for the mapper if we had more objects to map than just the widget</li>
+	<li>Even though we know the widget bean is initially empty, we still set the values of the fields to the properties of the widget. This is so that we can retain form-state if validation was to fail on posting the form.</li>
+</ul>
+If there are object relationships to deal with in a form, you could obviously deal with this with the use of StringValueTransformers as described in the section <a href="#valuetransformers">Lookup Complex Objects by Id: StringValueTransformers</a>.
+
+<h3><a name="testing">Testing</a></h3>
+Testing can be done both in an "in-vm container" <a href="https://github.com/wfaler/bowler-quickstart/blob/master/src/test/scala/bowlerquickstart/SimpleRequestTest.scala">using ScalatraFunSuite like this</a>, or completely without any dependencies on even a mock container.<br/>
+<b>[TESTING SECTION TO BE EXPANDED]</b>
 </div>
 </div>
 
