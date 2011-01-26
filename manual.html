@@ -32,11 +32,15 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 	<li><a href="#view">The View</a></li>
 	<ul>
 		<li><a href="#resourceview">The Resource View & View Model</a></li>
+		<ul>
+			<li><a href="#nestedresourceview">What about Dropdowns and other UI elements that need additional models?</a></li>
+		</ul>
 		<li><a href="#scalatmodelalias">Scalate Templates & View Model Aliases</a></li>
 		<li><a href="#templatemapping">Template Mapping</a></li>
 		<ul>
 			<li><a href="#localisation">Localisation</a></li>
-		</ul>		
+		</ul>	
+		<li><a href="#components">Re-usable UI Components</a></li>	
 		<li><a href="#jsonhtml">Return JSON or HTML?</a></li>
 		<li><a href="#layouts">Layouts</a></li>
 		<ul>
@@ -146,6 +150,10 @@ This should render the following (excluding any layout around it for simplicity 
 
 There are a couple of things to learn from this: by extending our controller with <i>Renderable</i>, we get access to the <i>render</i> function, which is a vararg function that will invoke the rendering with your model objects. Render will eventually map your model into an appropriate model for Scalate and the mustache template to render in this case. We'll deal with this in a second.<br/>
 The <i>render</i> function is central here: as you can see, you only pass in your model, or any arbitrary model objects that represent your resource, but you don't actually give it any information on how to render the model. This is important, especially if you want to render to multiple outputs, for instance JSON (which you get for free, more on that later) and HTML.
+
+<h5><a name="nestedresourceview">What about Dropdowns and other UI elements that need additional models?</a></h5>
+Dropdowns and other elements may require additional backing model data which isn't part of your immediate Resource, for instance a Resource Model may have another Resource set on it in a relationship, but you may have a form where you want to choose from a number of possible options in a dropdown.<br/>
+In this case the Mustache template format is probably unsuitable in this particular case. The best practice in this case is to use something like an SSP template and a re-usable Bowler UI Component - this is detailed in the section <a href="#components">Re-usable UI Components</a>.
 	
 <h4><a name="scalatmodelalias">Scalate Templates & View Model Aliases</a></h4>
 As we could see in the above example, the Widget case class instance somehow got mapped into a Scalate model object called <i>"widget"</i> for the benefit of the template, how did this happen and what governs this?
@@ -172,6 +180,23 @@ There are some notable special cases around this (we'll use .mustache files here
 <h5><a name="localisation">Localisation</a></h5>	
 Localisation of Views and Layouts in Bowler is easy - simply copy your original template and suffix the filename before the file-ending with the locale:
 For instance, a file called <i>index_se.mustache</i> will take precedence over <i>index.mustache</i> if the users browser has a Swedish locale set.
+
+
+<h4><a name="components">Re-usable UI Components</a></h4>
+<a href="http://scalate.fusesource.org/documentation/ssp-reference.html">The Scalate SSP template format</a> allows you to call Scala code from your template. Adding lots of code/logic in your template is generally not a good thing, however if you do it cleanly as in the example below, you are using a style which is clean, concise and nice with a minimum of actual code:
+<script src="https://gist.github.com/795989.js?file=reuse.ssp"></script>
+What happens in the template snippet above is that we have imported the functions & values of "SimpleComponent" to be available in the template, we then call the "show" function on the SimpleComponent singleton object with a Tuple2 parameter, for which the resulting string is unescaped by Scalate so that any resulting HTML is returned without being escaped (be careful if you are returning user input data and filter it for scripts!).<br/>
+What is key to creating re-usable components in this manner is:
+<ul>
+	<li>Create a singleton object and import it as in the example above.</li>
+	<li>Call a method as above that will return a String with the contents that you want to display in place of the code</li>
+	<li>If using SSP, you may pass any type-safe parameter you wish to the function as an argument</li>
+</ul>
+By doing this, you are effectively creating the equivalent of a Wicket Component, Lift Snippet or JSP custom tag, if you are familiar with any of these technologies.<br/>
+From Bowler 0.2 onwards, we will have a "ComponentSupport" trait that you may extend, which allows you to associate Scalate markup with a given Component class.<br/>
+<b>[TODO: Update section on release of Bowler 0.2]</b>
+
+
 <h4><a name="jsonhtml">Return JSON or HTML?</a></h4>	
 Given the separation of Resource View and Layout that we have been banging on about, rendering JSON instead of HTML is really simple: if you set the HTTP "accept" header on a request to "application/json" the server will render a JSON representation of your View Model.
 Consider the following JQuery code:
