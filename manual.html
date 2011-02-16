@@ -67,6 +67,11 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 		<li><a href="#forms">Forms</a></li>
 
 	</ul>
+	<li><a href="#requestcycle">The Request Cycle</a></li>
+	<ul>
+		<li><a href="#interceptingrequests">Intercepting Requests (example: transactionality)</a></li>
+		<li><a href="#nestedinterception">Nested Interception(example: transactionality + authentication/authorization)</a></li>
+	</ul>
 	<li><a href="#testing">Testing</a></li>
 </ul>
 <h4>Deeper Customization</h4>
@@ -322,6 +327,19 @@ It's pretty straightforward, but we can note a few things:
 	<li>Even though we know the widget bean is initially empty, we still set the values of the fields to the properties of the widget. This is so that we can retain form-state if validation was to fail on posting the form.</li>
 </ul>
 If there are object relationships to deal with in a form, you could obviously deal with this with the use of StringValueTransformers as described in the section <a href="#valuetransformers">Lookup Complex Objects by Id: StringValueTransformers</a>.
+
+<h3><a name="requestcycle">The Request Cycle</a></h3>
+<h4><a name="interceptingrequests">Intercepting Requests (example: transactionality)</a></h4>
+Intercepting requests in a catch-all function can be a useful thing for many types of scenarios, for instance transaction-management with persistence, or cleaning up other resources to avoid having developers call ".close()" functions all over the code. This is catered for in Bowler quite easily by extending the InterceptingController trait. The example below shows an example of transaction- and connection management in the InterceptingController "around"-function as used by the Bowler Squeryl mapper module:
+<script src="https://gist.github.com/828574.js?file=intercepting.scala"></script>
+The "controller"-function received as an argument in this case is simply the actual function/closure you defined as your request-handler in a get(..), post(..), put(..) or delete(..) block. To proceed to your normal request processing it needs to be called in your around-function.
+
+<h4><a name="nestedinterception">Nested Interception(example: transactionality + authentication/authorization)</a></h4>
+But what if I want to add something in a sub-class to the above example that needs to run <i>inside</i> the transaction, but around the controller-function?
+Easy, just override "around", define an anonymous function with the correct signature ((Request, Request) => Unit ) and call the controller-function from within it as in the example below:
+<script src="https://gist.github.com/828581.js?file=extendedaround.scala"></script>
+This example shows how to easily add authentication that would run inside the transactional block, but before and after the actual request-handling, this giving you control whether for instance you actually want to run the default request handling, or perhaps re-direct to something like a login page if it is a authentication/authorization use case.
+
 
 <h3><a name="testing">Testing</a></h3>
 Testing can be done both in an "in-vm container" <a href="https://github.com/wfaler/bowler-quickstart/blob/master/src/test/scala/bowlerquickstart/SimpleRequestTest.scala">using ScalatraFunSuite like this</a>, or completely without any dependencies on even a mock container.<br/>
