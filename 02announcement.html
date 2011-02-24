@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Bowler - The Bowler Scala Web Framework v0.2 Released!</title>
+<link rel="stylesheet" type="text/css" href="css/style.css"/>
+</head>
+<body>
+<div id="container">
+<span ><!-- header panel here --></span>
+<div id="header">
+
+<h1 >Bowler</h1>
+<p >RESTful Scala Web Framework</p>
+</div>
+
+<div>
+	<ul class="tabs-nav">
+	        <li ><a href="/"><span>Home</span></a></li><li ><a href="/manual.html"><span>Manual</span></a></li>
+	    </ul>
+
+    </div>
+<div class="tabs-container">
+<div id="body">
+	<h2>Bowler Scala Web Framework version 0.2 Released!</h2>
+	<i>February 24th 2011</i><br/>
+	Version 0.2 of Bowler, a RESTful, multi-channel ready web framework in Scala has been released. For details on how to get the code, get started etc, please check the <a href="/">homepage</a> or <a href="/manual.html">the manual</a>.<br/><br/>
+	This is the second release and has focused on cleaning up API's and providing integration with JPA and Squeryl for persistence, as well as providing generic CRUD functionality for simple CRUD apps.<br/>The full list of changes and new features below:
+
+
+	<h3>Changelist for version 0.2</h3>
+	This is a changelist compiled primarily by trawling through the commit logs since the 0.1 release, hence it is made with reservations for any potential omissions.
+
+
+	<h4>Features</h4>
+	<ul>
+		<li>ComponentRenderSupport for allowing simple creation of re-usable UI components.</li>
+		<li>ModelValidatorBuilder for allowing model objects to have default validators associated with them.</li>
+		<li>Updated to Scalate 1.4</li>
+		<li>Singleton validator registration allowed (useful for dynamically registering validators)</li>
+		<li>Persistence Mapper Modules for:</li>
+		<ul>
+			<li>Squeryl</li>
+			<li>JPA</li>
+		</ul>
+		<li>Persistence Mapper Modules include:</li>
+		<ul>
+			<li>Transaction management with "Open Session in View" pattern (for single database apps)</li>
+			<li>UniqueEntityValidator validator</li>
+			<li>Generic EntityTransformer StringValueTransformer for looking up/mapping objects from id's.</li>
+			<li>Dao trait and AbstractDao to easily create mappers for other persistence frameworks</li>
+			<li>Generic "CrudController" that gives basic Create, Read, Update, Delete functionality in a controller for persistence mappers.</li>
+		</ul>
+	</ul>
+
+
+
+	<h4>API changes</h4>
+	<ul>
+		<li>Scala "apply" for shorthand access replaces:</li>
+		<ul>
+			<li>TransformerRegistry: resolveTransformer</li>
+			<li>GenericsParser now GenericTypeDefinition object with apply</li>
+			<li>AliasRegistry now has "apply" for alias lookups rather than "getAlias"</li>
+		</ul>
+		<li>HTTP.Method changed from Enumeration to sealed trait of HttpMethod and case objects</li>
+		<li>Validators now mostly use companion objects for creation, eg "new MinimumLengthValidator" now constructed with "MinLength"</li>
+		<li>ContentTypeResolver object removed</li>
+		<li>signature of Request getAcceps changed and renamed to getAccept</li>
+	</ul>
+
+	<h4>Bugs fixed</h4>
+	<ul>
+		<li>rendering empty Seq/List bug fixed</li>
+		<li>Now allows rendering without a default layout</li>
+		<li>Improved error messages on missing messages for validators</li>
+	</ul>
+
+
+
+
+</div>
+</div>
+
+        <div id="footer">
+<p>
+<span >Copyright &copy; Recursivity limited, 2010-
+</p>
+</div>
+
+
+</div>
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1376753-12']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>
+
+
+

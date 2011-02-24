@@ -25,9 +25,18 @@
 <h2>The Bowler Manual</h2>
 This is the Bowler manual and will continually be expanded on. In addition to this manual, the <a href="https://github.com/wfaler/Bowler/tree/master/examples">Bowler Example Application</a> and the <a href="https://github.com/wfaler/bowler-quickstart">Bowler Quickstart</a> are good places to start getting into Bowler and how it works.
 <ul>
+	<li><a href="#build">SBT or Maven dependencies</a></li>
+	<ul>
+		<li><a href="#basebuild">Bowler Core</a></li>
+		<li><a href="#squerylbuild">Bowler with Squeryl Integration</a></li>
+		<li><a href="#jpabuild">Bowler with JPA Integration</a></li>
+	</ul>
 	<li><a href="#setup">Application Setup</a></li>
 	<li><a href="#structure">Application Structure</a></li>
 	<li><a href="#routes">The Controller - Defining Routes/URL's</a></li>
+	<ul>
+		<li><a href="#routeordering">Ordering of Routes</a></li>
+	</ul>
 
 	<li><a href="#view">The View</a></li>
 	<ul>
@@ -40,7 +49,7 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 		<ul>
 			<li><a href="#localisation">Localisation</a></li>
 		</ul>	
-		<li><a href="#components">Re-usable UI Components</a></li>	
+		<li><a href="#components">Re-usable UI Components & ComponentRenderSupport</a></li>	
 		<li><a href="#jsonhtml">Return JSON or HTML?</a></li>
 		<li><a href="#layouts">Layouts</a></li>
 		<ul>
@@ -61,8 +70,9 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 		</ul>
 		<li><a href="#validation">Validation</a></li>
 		<ul>
-			<li><a href="#customvalidators">Creating Custom Validators</a></li>
+			<li><a href="#customvalidations">Creating Custom Validators</a></li>
 			<li><a href="#validationmessages">Validation Messages & Localisation</a></li>
+			<li><a href="#defaultvalidation">Default Validators for Models</a></li>
 		</ul>
 		<li><a href="#forms">Forms</a></li>
 
@@ -71,6 +81,17 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 	<ul>
 		<li><a href="#interceptingrequests">Intercepting Requests (example: transactionality)</a></li>
 		<li><a href="#nestedinterception">Nested Interception(example: transactionality + authentication/authorization)</a></li>
+	</ul>
+	<li><a href="#persistence">Persistence Integration</a></li>
+	<ul>
+		<li><a href="#squeryl">Squeryl</a></li>
+		<li><a href="#jpa">Jpa</a></li>
+		<li><a href="#persistencehelpers">Persistence Helpers</a></li>
+		<ul>
+			<li><a href="#entitytransformer">EntityTransformer StringValueTransformer</a></li>
+			<li><a href="#uniqueentityvalidator">UniqueEntityValidator</a></li>
+			<li><a href="#crudcontroller">CRUD Controller</a></li>
+		</ul>
 	</ul>
 	<li><a href="#testing">Testing</a></li>
 </ul>
@@ -87,6 +108,31 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 		<li>Render Strategies & View Renderers</li>
 	</ul>
 </ul>
+
+<h3><a name="build">SBT or Maven dependencies</a></h3>
+<h4><a name="basebuild">Bowler Core</a></h4>
+<h5><a name="sbt">Simple Build Tool</a></h5> 
+The below <a href="http://code.google.com/p/simple-build-tool/">Simple Build Tool (sbt)</a> project file should give you all you need to start using Bowler if you're a Sbt user (place the file in your project/build folder). It should download all the dependencies required from Sonatypes public repo once you run the sbt "update" command.
+<script src="https://gist.github.com/782223.js"> </script> 
+ 
+<h5><a name="maven">Getting Started Using Maven</a></h5> 
+If you're using Maven, you need to add the following into your pom.xml (in addition to the other Scala stuff you may want to set up for compilation):
+<script src="https://gist.github.com/782228.js?file=gistfile1.txt"></script>
+
+
+<h4><a name="squerylbuild">Bowler with Squeryl Integration</a></h4>
+If you want Squeryl integration you may want to add the following lines to <a href="#basebuild">the project description shown in the previous section</a> (last two are optional, and you should add a dependency on the JDBC driver for your deployment database):
+<script src="https://gist.github.com/841460.js?file=squerylbowlerproject.scala"></script>
+Also, compared to the baseline Bowler project, you can remove the dependency on "bowler-core_2.8.1", as this is implicit through "squeryl-mapper_2.8.1". For Maven users, I'm sure you can deduce the dependency definitions from the example here and in the previous section.
+<h4><a name="jpabuild">Bowler with JPA Integration</a></h4>
+Below are the extra settings required for JPA integration compared to the <a href="#basebuild">base build</a>, the comments explain the specific reasons for some of the dependencies:
+<script src="https://gist.github.com/841465.js?file=jpaproject.scala"></script>
+For Maven users, again, hopefully you can deduce what the dependencies and repo definitions are, as they follow the Maven format, but are defined in sbt's style.
+
+
+
+
+
 <h3><a name="setup">Application Setup</a></h3>
 Below is an example of the web.xml for a typical Bowler application:
 <script src="https://gist.github.com/783537.js?file=web.xml"></script>
@@ -139,7 +185,8 @@ But that's not all, we can also have regular expression routes:
 In a similar manner to the wildcards, the regex values captures will be available in a special case request variable called "captures" in the form of a List in the order of the wildcards.<br/>
 It should be noted that regex and wildcard URL's view mappings need to be explicitly made, as the file system of some operating systems, notably Windows do not support some of the strange characters that may otherwise ensue. More about this in the section <a href="#templatemapping">Template Mapping</a>.
 
-
+<h4><a name="routeordering">Ordering of Routes</a></h4>
+It is important to note that your routes could clash if you define them carefully, in this case the last defined route takes precedence. For instance if you have the route <i>"/resource/:id"</i> defined, and then <i>"/resource/new"</i>, any requests to /resource/new will go to the equivalent request handling closure but every other request that matches "/resource/:id" will go to that request handling closure. Even though "/resource/new" matches the "/resource/:id", it will take precedence IF it was defined later in the class. If it was defined before "/resource/:id", it will never be called!
 
 <h3><a name="view">The View</a></h3>
 
@@ -187,7 +234,7 @@ Localisation of Views and Layouts in Bowler is easy - simply copy your original 
 For instance, a file called <i>index_se.mustache</i> will take precedence over <i>index.mustache</i> if the users browser has a Swedish locale set.
 
 
-<h4><a name="components">Re-usable UI Components</a></h4>
+<h4><a name="components">Re-usable UI Components & ComponentRenderSupport</a></h4>
 <a href="http://scalate.fusesource.org/documentation/ssp-reference.html">The Scalate SSP template format</a> allows you to call Scala code from your template. Adding lots of code/logic in your template is generally not a good thing, however if you do it cleanly as in the example below, you are using a style which is clean, concise and nice with a minimum of actual code:
 <script src="https://gist.github.com/795989.js?file=reuse.ssp"></script>
 What happens in the template snippet above is that we have imported the functions & values of "SimpleComponent" to be available in the template, we then call the "show" function on the SimpleComponent singleton object with a Tuple2 parameter, for which the resulting string is unescaped by Scalate so that any resulting HTML is returned without being escaped (be careful if you are returning user input data and filter it for scripts!).<br/>
@@ -198,9 +245,12 @@ What is key to creating re-usable components in this manner is:
 	<li>If using SSP, you may pass any type-safe parameter you wish to the function as an argument</li>
 </ul>
 By doing this, you are effectively creating the equivalent of a Wicket Component, Lift Snippet or JSP custom tag, if you are familiar with any of these technologies.<br/>
-From Bowler 0.2 onwards, we will have a "ComponentSupport" trait that you may extend, which allows you to associate Scalate markup with a given Component class.<br/>
-<b>[TODO: Update section on release of Bowler 0.2]</b>
-
+A usefule utility when doing this is to let yout singleton object extend the <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/scalate/ComponentRenderSupport.html">ComponentSupport</a> trait, which allows you to associate Scalate markup with a given Component class. For instance, consider the following object that extends ComponentRenderSupport:<br/>
+<script src="https://gist.github.com/841249.js?file=CarDropdown.scala"></script>
+ComponentRenderSupport has a couple of methods, with <i>render</i> being the most likely one to use in most cases. In the above example, the <i>show</i>-function, which we can import into SSP, Jade or Scaml markup, will render a list of Car entities, together with a Car which is selected by default.<br/>
+The render-function will input this model aliased into markup that by default lives in the classpath at the pattern of /[package of your object]/[name of object]_index.[ssp|scaml|jade]. In this case the markup is ssp, at <i>/org/bowlerframework/examples/jpa/MakeDropdownComponent_index.ssp</i>, which looks as follows:
+<script src="https://gist.github.com/841261.js?file=cars.ssp"></script>
+All in all, extending ComponentRenderSupport gives you a nice way of creating autonomous Components that you can nest in your Layouts or Views, and that are useful to render parts that may not be part of your View Model, but that you need to fully display what you want to display (for instance a dropdown of choices of related model entities).
 
 <h4><a name="jsonhtml">Return JSON or HTML?</a></h4>	
 Given the separation of Resource View and Layout that we have been banging on about, rendering JSON instead of HTML is really simple: if you set the HTTP "accept" header on a request to "application/json" the server will render a JSON representation of your View Model.
@@ -209,6 +259,7 @@ Consider the following JQuery code:
 That's really all you need to emit JSON back to the client! Imagine how simple it becomes to create rich, interactive, JavaScript heavy webapps when you don't have to duplicate work to return JSON instead of HTML! 
 For instance, if you did a GET request to a route that rendered the Widget we used previously, it might emit something like this:
 <script src="https://gist.github.com/783710.js?file=widget.json"></script>	
+It should be noted that JSON rendering only works well for Scala <i>case classes</i>
 
 <h4><a name="layouts">Layouts</a></h4>	
 <h5><a name="layoutbasics">Basics</a></h5>	
@@ -315,6 +366,15 @@ The rules for validator properties files are quite simple:
 </ul>
 Finally a word on localisation: the validation message properties files support validation, if you create a file called WidgetValidator_se.properties, this will be the preferred source of messages for any client that has a locale set to Swedish.
 
+<h5><a name="defaultvalidation">Default Validators for Models</a></h5>
+If you don't want to duplicate validation code for models that you know will always have approximately the same validation, you can add and register default <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/model/ModelValidatorBuilder.html">ModelValidatorBuilders</a> for a model type:
+<script src="https://gist.github.com/841272.js?file=ModelValidatorBuilder_sample.scala"></script>
+A ModelValidatorBuilder is a class that you define, that has an <i>initialize</i> function, which takes a model of the type you define, and returns a <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/model/ModelValidator.html">ModelValidator</a>. A ModelValidator in turn is grouping of Validators with a validate-function, which will run all validators. A ModelValidator can also have Validators added to it, which is the purpose of the ModelValidatorBuilders initialize function - to add all the validators to the current model under validation:
+<script src="https://gist.github.com/841279.js?file=CarValidatorBuilder.scala"></script>
+If you then want to access your ModelValidator, you can either just instantiate a ModelValidatorBuilder directly and call initialize, or you can use the apply function of the ModelValidatorBuilder companion object to retrieve the appropriate ModelValidatorBuilder (if there is one):
+<script src="https://gist.github.com/841293.js?file=ModelValidatorBuilderApply.scala"></script>
+Now, just validate away to your hearts content!
+
 <h4><a name="forms">Forms</a></h4>
 When editing or creating new, it's recommended that you pass object you are editing, or wanting to create into the render function (as an empty object as below if necessary):
 <script src="https://gist.github.com/783846.js?file=newwidget.scala"></script>
@@ -327,6 +387,7 @@ It's pretty straightforward, but we can note a few things:
 	<li>Even though we know the widget bean is initially empty, we still set the values of the fields to the properties of the widget. This is so that we can retain form-state if validation was to fail on posting the form.</li>
 </ul>
 If there are object relationships to deal with in a form, you could obviously deal with this with the use of StringValueTransformers as described in the section <a href="#valuetransformers">Lookup Complex Objects by Id: StringValueTransformers</a>.
+<br/><br/><b>Important!</b> Even if you create new objects that have synthetic keys, such as incrementing numbers, having an id as a hidden field in your form, assigned to something like "0" will save you a lot of pain when the ParameterMapper tries to map a value to your id field. Most ORM's/persistence frameworks will assign a new value on insert anyway.
 
 <h3><a name="requestcycle">The Request Cycle</a></h3>
 <h4><a name="interceptingrequests">Intercepting Requests (example: transactionality)</a></h4>
@@ -340,10 +401,73 @@ Easy, just override "around", define an anonymous function with the correct sign
 <script src="https://gist.github.com/828581.js?file=extendedaround.scala"></script>
 This example shows how to easily add authentication that would run inside the transactional block, but before and after the actual request-handling, this giving you control whether for instance you actually want to run the default request handling, or perhaps re-direct to something like a login page if it is a authentication/authorization use case.
 
+<h3><a name="persistence">Persistence Integration</a></h3>
+Bowler has a flexible persistence integration framework available in add-on modules/sbt/maven dependencies. In most cases adding a new persistence integration is as simple as implementing the <a href="https://github.com/wfaler/Bowler/blob/master/persistence-mapper/src/main/scala/org/bowlerframework/persistence/Dao.scala">Bowler Dao</a>-trait and extending the <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/controller/InterceptingController.html">InterceptingController</a>-trait to do transaction management. The Bowler persistence integration in most cases uses a "Open Session in View" style pattern, which simply opens a connection and transaction on the beginning of a request, and closes and commits it at the end (or does a rollback in an Exception). The example below shows the InterceptingController integration for <a href="http://squeryl.org/">Squeryl</a>:
+<script src="https://gist.github.com/841349.js?file=SquerylController.scala"></script>
+As you can see, it's pretty straightforward. If you want to add additional things, like authentication, authorization or other checks around a request, but inside a transaction, you can just follow the pattern that we described in the <a href="#interceptingrequests">Intercepting Requests</a> section.<br/>
+Finally, it is worth noting though that the Bowler Persistent Mapper framework does not assume a relational database - in theory any persistent store should work!
+
+<h4><a name="squeryl">Squeryl</a></h4>
+<a href="http://squeryl.org/">Squeryl</a> is an excellent Scala based ORM/persistence framework which gives you a number of benefits over Java persistence frameworks like Hibernate and JPA. I quite like it. To set up a project with the Squeryl module, add the dependencies described in the <a href="#squerylbuild">Squeryl Build</a> to your project.<br/>
+Once you have done so, you need to set-up your datasource, you can do this programmatically in your Bootstrap if you want, below is an example with C3P0 connection pooling:
+<script src="https://gist.github.com/841361.js?file=squerylpooling.scala"></script>
+Once you have done this setup, in most cases you can just extend the <a href="https://github.com/wfaler/Bowler/blob/master/squeryl-mapper/src/main/scala/org/bowlerframework/squeryl/SquerylController.scala">org.bowlerframework.squeryl.SquerylController</a> trait!<br/>
+You may also want to use some of the generic Squeryl DAO's for simple CRUD like functionality, or with some of the <a href="persistencehelpers">Persistence Helpers described later</a>.
+The Squeryl module has an abstract <a href="https://github.com/wfaler/Bowler/blob/master/squeryl-mapper/src/main/scala/org/bowlerframework/squeryl/SquerylDao.scala">SquerylDao</a>, which in turn can be extended, and is extended by:
+<ul>
+	<li><a href="https://github.com/wfaler/Bowler/blob/master/squeryl-mapper/src/main/scala/org/bowlerframework/squeryl/dao/LongKeyedDao.scala">org.bowlerframework.squeryl.dao.LongKeyedDao</a> - for entities with a Long identifier</li>
+	<li><a href="https://github.com/wfaler/Bowler/blob/master/squeryl-mapper/src/main/scala/org/bowlerframework/squeryl/dao/StringKeyedDao.scala">org.bowlerframework.squeryl.dao.StringKeyedDao</a> - for entities with a String identifier</li>
+	<li><a href="https://github.com/wfaler/Bowler/blob/master/squeryl-mapper/src/main/scala/org/bowlerframework/squeryl/dao/IntKeyedDao.scala">org.bowlerframework.squeryl.dao.IntKeyedDao</a> - for entities with a Int identifier</li>
+</ul>
+For how to use Squeryl specifically in more debt, please refer to the <a href="http://squeryl.org/">Squeryl site</a>.
+
+<h4><a name="jpa">Jpa</a></h4>
+The JPA integration module follows exactly the same pattern as the Squeryl integration, in that you simply setup your JPA persistence.xml as you would otherwise, then extend the <a href="https://github.com/wfaler/Bowler/blob/master/jpa-mapper/src/main/scala/org/bowlerframework/jpa/JpaController.scala">JpaController</a> trait in most cases. If/when you want to access a JPA EntityManager anywhere in your code that is running directly or indirectly inside a JpaController, your EntityManagers are just one import away:
+<script src="https://gist.github.com/841391.js?file=BowlerJpa.scala"></script>
+One thing here is of course that to access EntityManagers without providing a persistence-unit name, you need to set a default name in the <i>com.recursivity.jpa.PersistenceUnit.unitName</i> object variable.<br/>
+If you want to use any of the Persistence Helper detailed next, the JPA integration only has one Dao to worry about (but you can extend/override parts of it of course): <a href="https://github.com/wfaler/Bowler/blob/master/jpa-mapper/src/main/scala/org/bowlerframework/jpa/JpaDao.scala">JpaDao</a>
+
+
+<h4><a name="persistencehelpers">Persistence Helpers</a></h4>
+The Persistence Mapper modules have  the following generic persistence helpers which are independent of the persistence implementation, such as JPA or Squeryl:
+<h5><a name="entitytransformer">EntityTransformer (StringValueTransformer)</a></h5>
+As we have previously mentioned, StringValueTransformers are a useful way to ensure you can transform simple request parameters such as id's transparently into more complex objects. This becomes even more important when dealing with persistent objects, and or objects that have persistent objects set on them via id from a dropdown list.<br/>
+Below is an example of how to re-use the generic <i>org.bowlerframework.persistence.EntityTransformer</i> to enable lookups of a Car domain model object with the help of Jpa:
+<script src="https://gist.github.com/841402.js?file=entitytransformer.scala"></script>
+This code would typically go into your bootstrap class, or some other part where the transformer is registered with the TransformerRegistry before it is needed.<br/>
+As you can see, the EntityTransformer uses generics, so should be usable for most types of persistent objects provided you have a Dao implementation to provide the transformer.
+
+<h5><a name="uniqueentityvalidator">UniqueEntityValidator</a></h5>
+The <a href="https://github.com/wfaler/Bowler/blob/master/persistence-mapper/src/main/scala/org/bowlerframework/persistence/UniqueEntityValidator.scala">org.bowlerframework.persistence.UniqueEntityValidator</a> is a Validator that checks that an Entity is unique in a persistent store - probably useful if you have resources where the user assigns an id!
+<h5><a name="crudcontroller">CRUD Controller</a></h5>
+The Bowler Persistence Mapper framework also provides a simple <a href="https://github.com/wfaler/Bowler/blob/master/persistence-mapper/src/main/scala/org/bowlerframework/persistence/CrudController.scala">org.bowlerframework.persistence.CrudController</a> if you have simple needs that just consist of, well, Create, Read, Update and Delete. You would typically set it up in the following way in your bootstrap (example with Squeryl):
+<script src="https://gist.github.com/841412.js?file=crudcontrollersqueryl.scala"></script>
+As you can see, it takes type parameters of the entity type and its key-type. In addition it takes a persistence controller (in this case Squeryl), a Dao implementation and a resource name as arguments. The resourcename "people" will in this case mean that the root of the controller will be at "/people/".<br/>
+The reason the CRUD controller takes another Controller as an argument is that it is actually only a proxy for a controller and not a controller itself: The CRUD controller will initialize the provided controller with the correct business logic.<br/>
+The CRUD controller does the following things:
+<ul>
+   <li><i>GET /[resource]/</i>: gets the first n elements of type T (n defaults to 10)</li>
+<li><i>GET /[resource]/?itemsInList=n</i>: gets the n first elements of type T, changes n default to provided parameter</li>
+ <li><i>GET /[resource]/page/2</i>: get's second page of paginated list of elements as above</li>
+ <li><i>GET /[resource]/:id </i>: displays the T with the id provided</li>
+  <li><i>GET /[resource]/new </i>: should return a create form that POSTs a new T to /</li>
+  <li><i>GET /[resource]/:id/edit</i> : should return an edit form that POSTs an updated T to /:id</li>
+   <li><i>DELETE /[resource]/:id </i>: Deletes the T with the provided id</li>
+     <li><i>POST /[resource]/</i>: Creates a new entity of type T and renders it</li>
+  <li><i>POST /[resource]/:id</i>: Updates an entity of type T with the provided id and renders it</li>	
+</ul>
+
+
+
 
 <h3><a name="testing">Testing</a></h3>
 Testing can be done both in an "in-vm container" <a href="https://github.com/wfaler/bowler-quickstart/blob/master/src/test/scala/bowlerquickstart/SimpleRequestTest.scala">using ScalatraFunSuite like this</a>, or completely without any dependencies on even a mock container.<br/>
 <b>[TESTING SECTION TO BE EXPANDED]</b>
+
+
+
+
+
 </div>
 </div>
 
