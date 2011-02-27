@@ -30,6 +30,7 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 		<li><a href="#basebuild">Bowler Core</a></li>
 		<li><a href="#squerylbuild">Bowler with Squeryl Integration</a></li>
 		<li><a href="#jpabuild">Bowler with JPA Integration</a></li>
+		<li><a href="#snapshotreleases">SNAPSHOT releases</a></li>
 	</ul>
 	<li><a href="#setup">Application Setup</a></li>
 	<li><a href="#structure">Application Structure</a></li>
@@ -73,6 +74,7 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 			<li><a href="#customvalidations">Creating Custom Validators</a></li>
 			<li><a href="#validationmessages">Validation Messages & Localisation</a></li>
 			<li><a href="#defaultvalidation">Default Validators for Models</a></li>
+			<li><a href="#jsonvalidation">Validation Errors and JSON Responses</a></li>
 		</ul>
 		<li><a href="#forms">Forms</a></li>
 
@@ -128,7 +130,9 @@ Also, compared to the baseline Bowler project, you can remove the dependency on 
 Below are the extra settings required for JPA integration compared to the <a href="#basebuild">base build</a>, the comments explain the specific reasons for some of the dependencies:
 <script src="https://gist.github.com/841465.js?file=jpaproject.scala"></script>
 For Maven users, again, hopefully you can deduce what the dependencies and repo definitions are, as they follow the Maven format, but are defined in sbt's style.
-
+<h4><a name="snapshotreleases">SNAPSHOT releases</a></h4>
+The Bowler project will occassionally, but unfrequently make snapshot releases for the framework when major milestones are reached in development or bug fixes are made, but there is not sufficient QA done to make a full release. These will reside in the <a href="https://oss.sonatype.org/content/repositories/snapshots">Sonatype SNAPSHOTS repository</a>.<br/>
+The current SNAPSHOT release is <b>0.2.2-SNAPSHOT</b>
 
 
 
@@ -374,6 +378,10 @@ A ModelValidatorBuilder is a class that you define, that has an <i>initialize</i
 If you then want to access your ModelValidator, you can either just instantiate a ModelValidatorBuilder directly and call initialize, or you can use the apply function of the ModelValidatorBuilder companion object to retrieve the appropriate ModelValidatorBuilder (if there is one):
 <script src="https://gist.github.com/841293.js?file=ModelValidatorBuilderApply.scala"></script>
 Now, just validate away to your hearts content!
+
+<h5><a name="jsonvalidation">Validation Errors and JSON</a></h5>
+For JSON Validation errors the default behavior of the Bowler <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/JsonViewRenderer.html">JsonViewRenderer</a> is to throw an HTTP 400 error, together with a <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/exception/ValidationException.html">ValidationException</a>.<br/>
+If you want to render something more meaningful for the HttpExceptions than the servers default error messages, you should override your Servlet Containers default behavior for dealing with Exceptions. If you are using Jetty the way to do this is <a href="http://docs.codehaus.org/display/JETTY/How+to+Create+Custom+Error+Pages">implementing a Custom error handler class and making the appropriate reference in your web.xml</a>, you can then retrieve the validation messages from the ValidationException and render the appropriate JSON response together with the HTTP 400 error.
 
 <h4><a name="forms">Forms</a></h4>
 When editing or creating new, it's recommended that you pass object you are editing, or wanting to create into the render function (as an empty object as below if necessary):
