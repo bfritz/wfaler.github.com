@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Bowler - The Bowler Scala Web Framework v0.3 Released!</title>
+<link rel="stylesheet" type="text/css" href="css/style.css"/>
+</head>
+<body>
+<div id="container">
+<span ><!-- header panel here --></span>
+<div id="header">
+
+<h1 >Bowler</h1>
+<p >RESTful Scala Web Framework</p>
+</div>
+
+<div>
+	<ul class="tabs-nav">
+	        <li ><a href="/"><span>Home</span></a></li><li ><a href="/manual.html"><span>Manual</span></a></li>
+	    </ul>
+
+    </div>
+<div class="tabs-container">
+<div id="body">
+	<h2>Bowler Scala Web Framework version 0.3 Released!</h2>
+	<i>April 6th 2011</i><br/>
+	Version 0.3 of Bowler, a RESTful, multi-channel ready web framework in Scala has been released. For details on how to get the code, get started etc, please check the <a href="/">homepage</a> or <a href="/manual.html">the manual</a>.<br/><br/>
+	This is the third release and has focused on cleaning up API's, better UI re-use and the addition of more Component oriented UI aspects with the help of Scalate's Squery.<br/>
+	The <a href="https://github.com/wfaler/Bowler/tree/master/examples">Bowler Example application</a> in our GitHub repository showcases a lot of the new features.<br/>
+	A list of changes and new features below:
+
+
+	<h3>Change highlights for version 0.3</h3>
+	This is a partial changelist compiled from memory, hence it is likely to contain omissions.<br/>
+	Most of all, I am excited about adding Squery to the list of supported templating methods, a perfect choice for a more Component oriented style of templating. And, nothing stops you from mixing and matching as you see fit: maybe use the default Scalate methods for most things, but include/import use of Squery Components?
+
+
+	<h4>Feature Highlights</h4>
+	<ul>
+		<li>Scalate's designer friendly (Wicket like) Squery templating now supported, supports markup inheritance, component inheritance and composition.</li>
+		<li>Renderable has new "renderWith"-function that allows you to pass an alternate "ViewPath" - allows for better markup re-use between paths.</li>
+		<li>renderWith also allows rendering of Squery templates.</li>
+		<li>Re-usable ValidationFeedbackPanel Component for rendering validation errors (to save you some work if it is sufficient).</li>
+		<li>Optimized template loading, specifically for Squery templates.</li>
+	</ul>
+
+
+
+	<h4>API changes</h4>
+	<ul>
+		<li>removed TemplateRegistry.templateOverride - renderWith in Renderable with ViewPath now recommended method</li>
+	</ul>
+
+	<h4>Bugs fixed</h4>
+	<ul>
+		<li>CrudController paging bug fixed</li>
+		<li>Fixed dependency issue in not providing transient dependencies in all cases</li>
+	</ul>
+
+
+
+
+</div>
+</div>
+
+        <div id="footer">
+<p>
+<span >Copyright &copy; Recursivity limited, 2010-
+</p>
+</div>
+
+
+</div>
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1376753-12']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>
+
+
+

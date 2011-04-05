@@ -48,9 +48,10 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 		<li><a href="#scalatmodelalias">Scalate Templates & View Model Aliases</a></li>
 		<li><a href="#templatemapping">Template Mapping</a></li>
 		<ul>
+			<li><a href="#templateReuse">Template Re-use</a></li>
 			<li><a href="#localisation">Localisation</a></li>
 		</ul>	
-		<li><a href="#components">Re-usable UI Components & ComponentRenderSupport</a></li>	
+		<li><a href="#componentRenderSupport">Re-usable UI Components with ComponentRenderSupport</a></li>	
 		<li><a href="#jsonhtml">Return JSON or HTML?</a></li>
 		<li><a href="#layouts">Layouts</a></li>
 		<ul>
@@ -59,6 +60,7 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 			<li><a href="#nestedlayouts">Nested Layouts</a></li>
 			<li><a href="#layoutcomposition">Layout Composition: Layout Models</a></li>
 		</ul>
+		<li><a href="#components">"Wicket-like" Component Oriented Templating with Squery</a></li>
 	</ul>
 	<li><a href="#model">The Model: POST, PUT, GET, DELETE - Handling Requests</a></li>
 	<ul>
@@ -77,6 +79,9 @@ This is the Bowler manual and will continually be expanded on. In addition to th
 			<li><a href="#jsonvalidation">Validation Errors and JSON Responses</a></li>
 		</ul>
 		<li><a href="#forms">Forms</a></li>
+		<ul>
+			<li><a href="#validationerrorscomponent">Displaying Validation Errors in Forms</a></li>
+		</ul>
 
 	</ul>
 	<li><a href="#requestcycle">The Request Cycle</a></li>
@@ -230,15 +235,19 @@ There are some notable special cases around this (we'll use .mustache files here
 <ul>
 	<li>The root of a folder/path should have an <i>index.mustache</i> file.</li>
 	<li>For named variables, like ":id", the semi-colon is replaced by an underscore, so request to GET <i>"/widgets/:id"</i> would be mapped to for instance a mustache template at <i>/views/GET/widgets/_id.mustache</i>. This also goes for multiple levels of nested named parameters: folders can also be prefixed with the underscore</li>
-	<li>Regex and Wildcard URL's need to have their view templates set explicitly by calling <a href="http://bowler.s3.amazonaws.com/api/org/bowlerframework/view/scalate/TemplateRegistry$.html">TemplateRegistry.overridePath</a> or TemplateRegistry.regexPath, for instance <i>TemplateRegistry.overridePath("/say/*/to/*", "/views/GET/hello")</i> (note the omitted file-ending, Bowler will work this out for you)</li>
-	<li>Any other route can also have their related view overriden as above, this can be useful if you want to re-use the same view across several routes.</li>
+	<li>Regex and Wildcard URL's need to have their view template paths set explicitly by using the method described in the <a href="#templateReuse">Template Re-use</a> section</li>
 </ul>
+<h5><a name="templateReuse">Template Re-use</a></h5>
+If you want to re-use templates that have been defined for other parts, thus saving yourself copy pasting almost identical templates, or you want to define a template location for a regex- or wildcard URL, you can use the <i>Renderable.renderWith</i> function, as shown below:
+<script src="https://gist.github.com/900563.js?file=renderWith1.scala"></script>
+The ViewPath and RenderPath helper-objects used as the first argument to <i>renderWith</i> will make the TemplateResolver look for the template in the alternate location mapping instead. The alternate mapping follows the exact same syntax as your route-definitions in your controllers.
+
 <h5><a name="localisation">Localisation</a></h5>	
 Localisation of Views and Layouts in Bowler is easy - simply copy your original template and suffix the filename before the file-ending with the locale:
 For instance, a file called <i>index_se.mustache</i> will take precedence over <i>index.mustache</i> if the users browser has a Swedish locale set.
 
 
-<h4><a name="components">Re-usable UI Components & ComponentRenderSupport</a></h4>
+<h4><a name="componentRenderSupport">Re-usable UI Components with ComponentRenderSupport</a></h4>
 <a href="http://scalate.fusesource.org/documentation/ssp-reference.html">The Scalate SSP template format</a> allows you to call Scala code from your template. Adding lots of code/logic in your template is generally not a good thing, however if you do it cleanly as in the example below, you are using a style which is clean, concise and nice with a minimum of actual code:
 <script src="https://gist.github.com/795989.js?file=reuse.ssp"></script>
 What happens in the template snippet above is that we have imported the functions & values of "SimpleComponent" to be available in the template, we then call the "show" function on the SimpleComponent singleton object with a Tuple2 parameter, for which the resulting string is unescaped by Scalate so that any resulting HTML is returned without being escaped (be careful if you are returning user input data and filter it for scripts!).<br/>
@@ -288,6 +297,36 @@ Finally, if you want slightly different layouts for different routes, you can de
 What if I want to include more than the child Layout or Resource View in my Layout based on templates? Simple! You can do this in several ways with the help of LayoutModels as we have discussed, for instance you might take direct control of Scalate to add a "tabsPanel" to some Layout, just as in the code below:
 <script src="https://gist.github.com/783739.js?file=advancedlayoutmodel.scala"></script>
 
+
+<h5><a name="components">"Wicket-like" Component Oriented Templating with Squery</a></h5>One of the biggest additions from Bowler 0.3 and onwards is the addition of <a href="http://scalate.fusesource.org/documentation/scuery.html">Squery templating</a>, which gives a very Apache Wicket-like Component-oriented style of templating.<br/>
+Out of necessity due to the differences, Squery templating differs slightly from the standard Scalate templating style.
+Squery Components in Bowlerhave the following characteristics:
+<ul>
+	<li>They consist of two artifacts: a class that extends either MarkupContainer or Component, and html,xhtml or xml markup that must have the same fully qualified name/path as its Component class, for instance the Component <i>com.myco.MyComponent</i> must have markup on the classpath at <i>/com/myco/MyComponent.html</i></li>
+	<li>MarkupContainer is for components that do not need to do any transformations, Component is for components that need to do programmatic transformations to the markup. Choose which to extend accordingly.</li>
+	<li>Squery components can be extended and composed in a fully OO fashion</li>
+	<li>Components can inherit markup, for instance if MyComponent has markup, and YourComponent does not, but extends MyComponent, it will automatically use the markup of MyComponent as its markup</li>
+	<li>If you choose to render a Component straight from a Renderable, you will have to use <i>"renderWith"</i>, and no layout will be resolved automatically (it is the responsibility of the developer to provide the full page including layout when using Squery for the full page render).</li>
+	<li>Components follow the same markup localisation rules as other Bowler templates/layouts</li>
+</ul>
+
+Let's look at Squery rendering in action, to render a Squery based page, we simply use the Renderable.renderWith function instead of render:
+<script src="https://gist.github.com/900602.js?file=renderSquery.scala"></script>
+In this case, if the "accept" Content-Type from the client is not one for which we should render HTML, Bowler will still resolve the correct way to render, for instance application/json instead of html.<br/>
+For brevity, we have omitted the markup for SqueryWidgetPage, but in this instance it provides the layout for the page, whereas the view Component will be provided as a constructor argument and will be inserted with a css-selector at the element with a class of "tabs-container" (we call "render" on the child Component for it to render itself):
+<script src="https://gist.github.com/900607.js?file=SqueryWidgetPage.scala"></script>
+The NewWidgetForm that we passed in as an argument to SqueryWidgetPage has the following markup:
+<script src="https://gist.github.com/900611.js?file=widgetform.html"></script>
+NewWidgetForm has the following code making up the Component:
+<script src="https://gist.github.com/900614.js?file=NewWidgetForm.scala"></script>
+As you can see, NewWidgetForm does a number of things:
+<ul>
+	<li>It adds a ValidationFeedbackPanel to display validation errors, if there are any</li>
+	<li>It checks in the session whether there is a Widget model that has previously failed validation available that should be rendered instead if a new Widget to be created. This is to not lose state after a submit IF a form fails validation.</li>
+	<li>Bind the Widget models values to the appropriate form fields using css-selectors provided by Squery (valueOrEmpty is a function of Component that "html:ifies" your model properties)</li>
+</ul>
+This is a very brief walk-through of how Squery can work for you that barely scratches the surface, but as you can see it gives you a lot of ways of inheriting, composing and otherwise building flexible, Component oriented UI's in Bowler.<br/>
+Furthermore, if you still prefer using "standard" Scalate templates as described in the rest of the View section, there is nothing stopping you from using Squery Components inside of your SSP, Jade or Scaml templates by importing them, so you can combine the best of both worlds!
 
 <h3><a name="model">The Model: POST, PUT, GET, DELETE - Handling Requests</a></h3>
 <h4><a name="parametermapping">Parameter Mapping: Mapping Requests to Beans/instances</a></h4>
@@ -390,12 +429,16 @@ If you combine the above with the following template given the Widget case class
 <script src="https://gist.github.com/783844.js?file=new.mustache"></script>
 It's pretty straightforward, but we can note a few things:
 <ul>
-	<li><i>validationErrors</i>: This template block is used to render any validation errors that may occur after submission if validation fails. This would be empty to begin with.</li>
+	<li><i>validationErrors</i>: This template block is used to render any validation errors that may occur after submission if validation fails. This would be empty to begin with. However, this is only for demo purposes, for the same effect, there is a cleaner way of displaying validation errors as explained in <a href="#validationerrorscomponent">in the next sub-section</a></li>
 	<li>We have given the form fields the "alias hint", by prefixing the input names with "widget", though not necessary in this case, it makes life easier for the mapper if we had more objects to map than just the widget</li>
 	<li>Even though we know the widget bean is initially empty, we still set the values of the fields to the properties of the widget. This is so that we can retain form-state if validation was to fail on posting the form.</li>
 </ul>
 If there are object relationships to deal with in a form, you could obviously deal with this with the use of StringValueTransformers as described in the section <a href="#valuetransformers">Lookup Complex Objects by Id: StringValueTransformers</a>.
 <br/><br/><b>Important!</b> Even if you create new objects that have synthetic keys, such as incrementing numbers, having an id as a hidden field in your form, assigned to something like "0" will save you a lot of pain when the ParameterMapper tries to map a value to your id field. Most ORM's/persistence frameworks will assign a new value on insert anyway.
+
+<h5><a name="validationerrorscomponent">Displaying Validation Errors in Forms</a></h5>
+Rather than writing your own markup for displaying validation errors, you can also use the Bowler pre-existing <i>ValidationFeedbackPanel</i> component, simply add the correct import and call as below in the appropriate places in your template to get an un-ordered html list of validation error messages. If there are no error messages, nothing at all will be displayed:
+<script src="https://gist.github.com/900578.js?file=validationerrors.scala"></script>
 
 <h3><a name="requestcycle">The Request Cycle</a></h3>
 <h4><a name="interceptingrequests">Intercepting Requests (example: transactionality)</a></h4>
